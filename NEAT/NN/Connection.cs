@@ -4,8 +4,8 @@ using System.Text;
 
 namespace NEAT.NN {
     internal class Connection {
-        public int inNode;
-        public int outNode;
+        public int inNodeId;
+        public int outNodeId;
         public float weight;
         public bool enabled;
 

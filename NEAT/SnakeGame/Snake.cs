@@ -1,11 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using NEAT.SnakeGame;
-using Raylib_cs;
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Numerics;
 
 namespace NEAT.SnakeGame {
     public class Snake {
@@ -85,6 +78,7 @@ namespace NEAT.SnakeGame {
             return false;
         }
 
+
         public int getScore() {
             return this.length;
         }
@@ -109,6 +103,75 @@ namespace NEAT.SnakeGame {
                     }
             }
 
+        }
+
+
+        private float getDistanceToBody(RelativeDirection direction) {
+
+            int dx = 0;
+            int dy = 0;
+
+            if (direction == RelativeDirection.Straight) {
+                dx = this.xDir / Constants.SCALE;
+                dy = this.yDir / Constants.SCALE;
+            } else if (direction == RelativeDirection.Left) {
+                dx = this.yDir / Constants.SCALE;
+                dy = -this.xDir / Constants.SCALE;
+            } else if (direction == RelativeDirection.Right) {
+                dx = -this.yDir / Constants.SCALE;
+                dy = this.xDir / Constants.SCALE;
+            }
+
+            int currentX = (this.headX / Constants.SCALE) + dx;
+            int currentY = (this.headY / Constants.SCALE) + dy;
+            int distance = 1;
+            
+            while ( 
+                currentX >= 0 && currentX < Constants.NUMCOLS &&
+                currentY >= 0 && currentY < Constants.NUMROWS
+                ) {
+
+                if (this.body[..^1].Contains( new Vector2(currentX * Constants.SCALE, currentY * Constants.SCALE))) {
+                    return 1.0f / distance;
+                }
+
+                currentX += dx;
+                currentY += dy;
+                distance++;
+
+            }
+
+            return 0;
+        }
+
+
+        public float[] getNetworkInputs() {
+            float hDistanceToFood = (this.foodSourse.getPosition().X - this.headX) / 25f;
+            float vDistanceToFood = (this.foodSourse.getPosition().Y - this.headY) / 25f;
+
+            float rightWallDistance = Constants.NUMCOLS - 1f - this.headX / 25f;
+            float leftWallDistance = this.headX / 25f;
+            float downWallDistance = Constants.NUMROWS - 1f - this.headY / 25f;
+            float upWallDistance = this.headY / 25f;
+
+            float forwardBodyDistance = getDistanceToBody(RelativeDirection.Straight);
+            float leftBodyDistance = getDistanceToBody(RelativeDirection.Left);
+            float rightBodyDistance = getDistanceToBody(RelativeDirection.Right);
+
+
+
+            return new float[] {
+                hDistanceToFood / Constants.NUMCOLS,
+                vDistanceToFood / Constants.NUMROWS,
+                1f / (rightWallDistance + 1f), // +1 to avoid deviding by 0
+                1f / (leftWallDistance + 1f),
+                1f / (upWallDistance + 1f),
+                1f / (downWallDistance + 1f),
+                forwardBodyDistance,
+                leftBodyDistance,
+                rightBodyDistance
+
+            };
         }
 
     }

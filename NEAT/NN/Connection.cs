@@ -21,4 +21,10 @@
         }
 
     }
+
+    public struct OptimizedConnections {
+        public int inNodeId;
+        public int outNodeId;
+        public float weight;
+    }
 }

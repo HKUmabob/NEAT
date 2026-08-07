@@ -1,4 +1,5 @@
-﻿using NEAT.SnakeGame;
+﻿using NEAT.NN;
+using NEAT.SnakeGame;
 using Raylib_cs;
 using System.Numerics;
 
@@ -37,6 +38,8 @@ namespace NEAT {
             Snake snake = new Snake(foodSource);
             List<Vector2> body = snake.getBody();
 
+            NeuralNetwork network = new NeuralNetwork(9, 3);
+
             Raylib.InitWindow(Constants.WINDOWWIDTH, Constants.WINDOWHEIGHT, "Snek Game");
             Raylib.SetTargetFPS(10);
             bool isGameOver = false;
@@ -54,8 +57,12 @@ namespace NEAT {
                     }
 
                 } else {
-                    snake.setDir((RelativeDirection)Random.Shared.Next(0, 2));
+                    float[] outputs = network.feedForward(snake.getNetworkInputs());
+                    float maxval = outputs.Max();
+                    int index = outputs.ToList().IndexOf(maxval);
+                    snake.setDir((RelativeDirection)maxval);
                     snake.update();
+                    
 
                     if (snake.isDead()) {
                         isGameOver = true;
@@ -76,15 +83,14 @@ namespace NEAT {
                     Raylib.DrawText("Press [R] to Restart", Constants.WINDOWWIDTH / 2 - 95, Constants.WINDOWHEIGHT / 2 + 50, 16, Color.DarkGray);
 
                 } else {
-
                     Vector2 foodPosition = foodSource.getPosition();
 
                     //drawing food
                     Raylib.DrawRectangle(
                         (int)foodPosition.X,
                         (int)foodPosition.Y,
-                        (int)(Constants.SCALE),
-                        (int)(Constants.SCALE),
+                        Constants.SCALE,
+                        Constants.SCALE,
                         Color.Red);
 
 

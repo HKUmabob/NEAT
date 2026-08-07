@@ -54,7 +54,7 @@ namespace NEAT {
                     }
 
                 } else {
-                    snake.setDir((RelativeDirection) Random.Shared.Next(0, 2));
+                    snake.setDir((RelativeDirection)Random.Shared.Next(0, 2));
                     snake.update();
 
                     if (snake.isDead()) {

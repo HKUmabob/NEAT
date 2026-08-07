@@ -1,0 +1,24 @@
+﻿public NeuralNetwork(int inputs, int outputs) {
+            this.nodes = new List<Node>();
+            this.connections = new List<Connection>();
+
+            // Number of inputs = inputs+1 for bias node
+            for (int i = 0; i < inputs + 1; i++) {
+                nodes.Add(new Node(i, NodeType.Input, 0));
+            }
+
+            for (int i = 0; i < outputs; i++) {
+                nodes.Add(new Node(inputs + 1 + i, NodeType.Output, 1));
+            }
+
+
+            int innovationNumber = 1;
+            for (int i = 0; i < inputs + 1; i++) {
+                for (int j = 0; j < outputs; j++) {
+                    connections.Add(new Connection(i, inputs + j + 1, Random.Shared.Next(), true, innovationNumber));
+                    innovationNumber++;
+
+                }
+            }
+
+        }

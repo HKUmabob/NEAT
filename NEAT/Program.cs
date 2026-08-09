@@ -60,7 +60,7 @@ namespace NEAT {
                     float[] outputs = network.feedForward(snake.getNetworkInputs());
                     float maxval = outputs.Max();
                     int index = outputs.ToList().IndexOf(maxval);
-                    snake.setDir((RelativeDirection)maxval);
+                    snake.setDir((RelativeDirection)index);
                     snake.update();
                     
 

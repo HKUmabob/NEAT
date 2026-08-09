@@ -149,9 +149,9 @@ namespace NEAT.SnakeGame {
             float hDistanceToFood = (this.foodSourse.getPosition().X - this.headX) / 25f;
             float vDistanceToFood = (this.foodSourse.getPosition().Y - this.headY) / 25f;
 
-            float rightWallDistance = Constants.NUMCOLS - 1f - this.headX / 25f;
+            float rightWallDistance = Constants.NUMCOLS - 1.0f - this.headX / 25f;
             float leftWallDistance = this.headX / 25f;
-            float downWallDistance = Constants.NUMROWS - 1f - this.headY / 25f;
+            float downWallDistance = Constants.NUMROWS - 1.0f - this.headY / 25f;
             float upWallDistance = this.headY / 25f;
 
             float forwardBodyDistance = getDistanceToBody(RelativeDirection.Straight);
@@ -163,10 +163,10 @@ namespace NEAT.SnakeGame {
             return new float[] {
                 hDistanceToFood / Constants.NUMCOLS,
                 vDistanceToFood / Constants.NUMROWS,
-                1f / (rightWallDistance + 1f), // +1 to avoid deviding by 0
-                1f / (leftWallDistance + 1f),
-                1f / (upWallDistance + 1f),
-                1f / (downWallDistance + 1f),
+                1.0f / (rightWallDistance + 1.0f), // +1 to avoid deviding by 0
+                1.0f / (leftWallDistance + 1.0f),
+                1.0f / (upWallDistance + 1.0f),
+                1.0f / (downWallDistance + 1.0f),
                 forwardBodyDistance,
                 leftBodyDistance,
                 rightBodyDistance

@@ -16,6 +16,8 @@
                 nodes.Add(new Node(i, NodeType.Input, 0));
             }
 
+            this.nodes[0].value = 1f;
+
             for (int i = 0; i < outputs; i++) {
                 nodes.Add(new Node(inputs + 1 + i, NodeType.Output, 1));
             }
@@ -24,7 +26,7 @@
             int innovationNumber = 1;
             for (int i = 0; i < inputs + 1; i++) {
                 for (int j = 0; j < outputs; j++) {
-                    connections.Add(new Connection(i, inputs + j + 1, Random.Shared.Next(), true, innovationNumber));
+                    connections.Add(new Connection(i, inputs + j + 1, (float)Random.Shared.NextDouble() * 2 - 1, true, innovationNumber));
                     innovationNumber++;
 
                 }
@@ -35,9 +37,6 @@
         public float[] feedForward(float[] inputs) {
 
             List<Node> inputNodes = this.nodes.Where(n => n.nodeType == NodeType.Input).OrderBy(n => n.id).ToList();
-            if (inputNodes[0].value == 0) {
-                inputNodes[0].value = (float)Random.Shared.NextDouble();
-            }
             List<Node> otherNodes = this.nodes.Where(n => n.nodeType != NodeType.Input).OrderBy(n => n.layer).ToList();
 
             for (int i = 1; i < inputNodes.Count; i++) {
@@ -66,7 +65,7 @@
 
 
         private float sigmoid(float x) {
-            return 1 / 1 + MathF.Exp(-x);
+            return 1.0f / (1.0f + MathF.Exp(-x));
         }
 
 

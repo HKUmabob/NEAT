@@ -35,8 +35,8 @@ namespace NEAT {
     internal class Program {
         static void Main(string[] args) {
             Food foodSource = new Food();
-            Snake snake = new Snake(foodSource);
-            List<Vector2> body = snake.getBody();
+            Snake snake = new Snake();
+            List<Vector2> body = snake.GetBody();
 
             NeuralNetwork network = new NeuralNetwork(9, 3);
 
@@ -51,17 +51,15 @@ namespace NEAT {
                     if (Raylib.IsKeyPressed(KeyboardKey.R)) {
                         // Restart the game by resetting the objects and flag
                         foodSource = new Food();
-                        snake = new Snake(foodSource);
-                        body = snake.getBody();
+                        snake = new Snake();
+                        body = snake.GetBody();
                         isGameOver = false;
                     }
 
                 } else {
-                    float[] outputs = network.feedForward(snake.getNetworkInputs());
-                    float maxval = outputs.Max();
-                    int index = outputs.ToList().IndexOf(maxval);
-                    snake.setDir((RelativeDirection)index);
-                    snake.update();
+                    float[] networkInputs = snake.GetInputs();
+                    float[] outputs = network.feedForward(networkInputs);
+                    snake.Step(outputs);
                     
 
                     if (snake.isDead()) {
@@ -69,8 +67,8 @@ namespace NEAT {
                     }
 
 
-                    if (snake.canEat()) {
-                        snake.eat();
+                    if (snake.CanEat()) {
+                        snake.Eat();
                     }
                 }
 
@@ -79,7 +77,7 @@ namespace NEAT {
 
                 if (isGameOver) {
                     Raylib.DrawText("GAME OVER", Constants.WINDOWWIDTH / 2 - 100, Constants.WINDOWHEIGHT / 2 - 40, 30, Color.Red);
-                    Raylib.DrawText($"Score: {snake.getScore()}", Constants.WINDOWWIDTH / 2 - 50, Constants.WINDOWHEIGHT / 2 + 10, 20, Color.White);
+                    Raylib.DrawText($"Score: {snake.GetScore()}", Constants.WINDOWWIDTH / 2 - 50, Constants.WINDOWHEIGHT / 2 + 10, 20, Color.White);
                     Raylib.DrawText("Press [R] to Restart", Constants.WINDOWWIDTH / 2 - 95, Constants.WINDOWHEIGHT / 2 + 50, 16, Color.DarkGray);
 
                 } else {

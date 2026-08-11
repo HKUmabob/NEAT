@@ -21,7 +21,7 @@ namespace NEAT.Neat {
         }
 
 
-        public ConnectionGene clone() {
+        public ConnectionGene Clone() {
             return new ConnectionGene(this.inNodeId, this.outNodeId, this.weight, this.enabled, this.innovationNumber);
         }
     }

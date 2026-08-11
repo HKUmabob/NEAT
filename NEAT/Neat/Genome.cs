@@ -5,21 +5,28 @@ using System.Text;
 
 namespace NEAT.Neat {
     internal class Genome {
-        private List<NodeGene> nodeGenes;
-        private List<ConnectionGene> connectionGenes;
+        public List<NodeGene> nodeGenes { get; private set; }
+        public List<ConnectionGene> connectionGenes { get; private set; }
+        private readonly int inputs;
+        private readonly int outputs;
+        public readonly NeuralNetwork neuralNetwork;
 
-        public Genome() {
-            this.nodeGenes = new List<NodeGene>();
-            this.connectionGenes = new List<ConnectionGene>();
-        }
 
-        private Genome(List<NodeGene> nodeGenes, List<ConnectionGene> connectionGenes) {
+        public Genome(List<NodeGene> nodeGenes, List<ConnectionGene> connectionGenes, int inputs, int outputs) {
+            this.inputs = inputs;
+            this.outputs = outputs; 
             this.connectionGenes = connectionGenes;
             this.nodeGenes = nodeGenes;
+            this.neuralNetwork = new NeuralNetwork(this, inputs, outputs);
+
         }
 
+
         public Genome Clone() {
-            return new Genome(this.nodeGenes, this.connectionGenes);
+            List<NodeGene> clonedNodeGenes = this.nodeGenes.Select(n => n.Clone()).ToList();
+            List<ConnectionGene> clonedConnectionGenes = this.connectionGenes.Select( c =>  c.Clone()).ToList();
+
+            return new Genome(clonedNodeGenes, clonedConnectionGenes, this.inputs, this.outputs);
         }
     }
 }

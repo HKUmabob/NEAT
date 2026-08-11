@@ -9,11 +9,12 @@
     internal class Node {
         public int id;
         public float value;
-        public int layer;
+        public float layer;
         public NodeType nodeType;
+        public List<Connection> incomingConnections;
 
 
-        public Node(int id, NodeType nodeType, int layer) { 
+        public Node(int id, NodeType nodeType, float layer) { 
             this.id = id;
             this.nodeType = nodeType;
             this.layer = layer;

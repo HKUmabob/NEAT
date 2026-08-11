@@ -1,18 +1,16 @@
 ﻿namespace NEAT.NN {
     internal class Connection {
-        public int inNodeId;
-        public int outNodeId;
+        public Node inNode;
+        public Node outNode;
         public float weight;
 
 
-        public Connection(int inNodeId, int outNodeId, float weight, bool enabled) {
-            this.inNodeId = inNodeId;
-            this.outNodeId = outNodeId;
+        public Connection(Node inNode, Node outNode, float weight) {
+            this.inNode = inNode;
+            this.outNode = outNode;
             this.weight = weight;
         }
 
-
-        
 
     }
 }

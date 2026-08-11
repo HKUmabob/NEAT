@@ -1,78 +1,87 @@
-﻿namespace NEAT.NN {
+﻿using NEAT.Neat;
+
+namespace NEAT.NN {
     // TODO make NeuralNetwork(Genome) constructor
     // TODO cleanup FeedForward()
-    // TODO make connection in/out nodes reference types or give node 2 lists containing in/out connections
+    // TODO make connection in/out nodes reference types AND give node 2 lists containing in/out connections
 
     internal class NeuralNetwork {
 
-        private List<Connection> connections;
-        private List<Node> nodes;
+        private Connection[] connections;
+        private Node[] nodes;
+        private Node[] inputNodes;
+        private Node[] outputNodes;
+        private Node[] processingNodes;
 
 
-        // use for testing
-        public NeuralNetwork(int inputs, int outputs) {
-            this.nodes = new List<Node>();
-            this.connections = new List<Connection>();
+        public NeuralNetwork(Genome genome, int inputCount, int outputCount) {
 
-            // Number of inputs = inputs+1 for bias node
-            for (int i = 0; i < inputs + 1; i++) {
-                nodes.Add(new Node(i, NodeType.Input, 0));
+            this.nodes = genome.nodeGenes.Select(
+                n => new Node(
+                    n.id,
+                    n.nodeType,
+                    n.layer
+                    )
+                )
+                .OrderBy(n => n.layer)
+                .ThenBy(n => n.id)
+                .ToArray();
+
+            Dictionary<int, Node> nodeLookup = this.nodes.ToDictionary(n => n.id);
+            this.nodes[0].value = 1;                                                    // Bias node
+
+            this.connections = genome.connectionGenes.Where(c => c.enabled)
+                .Select(
+                c => new Connection(
+                    nodeLookup[c.inNodeId],
+                    nodeLookup[c.outNodeId],
+                    c.weight
+                    )
+                )
+                .ToArray();
+
+
+            int totalInputs = inputCount + 1;
+            this.inputNodes = this.nodes[0..totalInputs];                                    // includes Bias node
+
+            this.processingNodes = this.nodes[totalInputs..];
+
+            this.outputNodes = this.nodes[^outputCount..];
+
+                                                                                        // Setting the incoming connections
+            for (int i = 0; i< this.connections.Length; i++) {
+                Connection c = this.connections[i];
+                c.outNode.incomingConnections.Add(c);
             }
-
-            this.nodes[0].value = 1f;
-
-            for (int i = 0; i < outputs; i++) {
-                nodes.Add(new Node(inputs + 1 + i, NodeType.Output, 1));
-            }
-
-
-            for (int i = 0; i < inputs + 1; i++) {
-                for (int j = 0; j < outputs; j++) {
-                    connections.Add(new Connection(i, inputs + j + 1, (float)Random.Shared.NextDouble() * 2 - 1, true));
-
-                }
-            }
-
         }
 
-        public float[] feedForward(float[] inputs) {
-
-            List<Node> inputNodes = this.nodes.Where(n => n.nodeType == NodeType.Input).OrderBy(n => n.id).ToList();
-            List<Node> otherNodes = this.nodes.Where(n => n.nodeType != NodeType.Input).OrderBy(n => n.layer).ToList();
-
-            for (int i = 1; i < inputNodes.Count; i++) {
-                inputNodes[i].value = inputs[i - 1];
+        public float[] feedForward(float[] inputValues) {
+            
+            for (int i = 0; i < inputValues.Length; i++) {
+                this.inputNodes[i + 1].value = inputValues[i];
             }
 
-            for (int i = 0; i < otherNodes.Count; i++) {
-                Node currentNode = otherNodes[i];
+            for (int i = 0; i < this.processingNodes.Length; i++) {
+                Node currentNode = this.processingNodes[i];
                 float sum = 0;
-                List<Connection> incomingConnections = this.connections.Where(c => c.outNodeId == currentNode.id).ToList();
-                for (int j = 0; j < incomingConnections.Count; j++) {
-                    Node sourceNode = this.nodes.First( n => n.id == incomingConnections[j].inNodeId);
-                    sum += incomingConnections[j].weight * sourceNode.value;
+                for (int j = 0; j < currentNode.incomingConnections.Count; j++) {
+                    Node sourceNode = currentNode.incomingConnections[j].inNode;
+                    sum += currentNode.incomingConnections[j].weight * sourceNode.value;
                 }
 
-                currentNode.value = sigmoid(sum);
+                currentNode.value = Activate(sum);
             }
 
-            List<Node> outNodes = this.nodes.Where(n => n.nodeType == NodeType.Output).ToList();
-            float[] outputs = new float[outNodes.Count];
-            for (int i = 0; i < outNodes.Count; i++) {
-                outputs[i] = outNodes[i].value;
+            float[] outputs = new float[this.outputNodes.Length];
+            for (int i = 0; i < this.outputNodes.Length; i++) {
+                outputs[i] = this.outputNodes[i].value;
             }
             return outputs;
         }
 
 
-        private float sigmoid(float x) {
+        private float Activate(float x) {
             return 1.0f / (1.0f + MathF.Exp(-x));
-        }
-
-
-        private NeuralNetwork(List<Node> nodes, List<Connection> connections) {
-            this.connections = connections;
-            this.nodes = nodes;
         }
 
 

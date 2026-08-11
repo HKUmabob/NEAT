@@ -1,9 +1,12 @@
 ﻿namespace NEAT.NN {
+    // TODO make NeuralNetwork(Genome) constructor
+    // TODO cleanup FeedForward()
+    // TODO make connection in/out nodes reference types or give node 2 lists containing in/out connections
 
     internal class NeuralNetwork {
 
-        public List<Connection> connections { get; private set; }
-        public List<Node> nodes { get; private set; }
+        private List<Connection> connections;
+        private List<Node> nodes;
 
 
         // use for testing

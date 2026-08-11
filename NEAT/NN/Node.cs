@@ -13,7 +13,7 @@
         public NodeType nodeType;
 
 
-        public Node(int id, NodeType nodeType, int layer = 0) { 
+        public Node(int id, NodeType nodeType, int layer) { 
             this.id = id;
             this.nodeType = nodeType;
             this.layer = layer;
@@ -21,12 +21,6 @@
         }
 
 
-        public Node clone() {
-            return new Node(this.id, this.nodeType, this.layer) 
-            {
-                value = this.value
-            };
-        }
     }
 
 

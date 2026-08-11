@@ -23,11 +23,9 @@
             }
 
 
-            int innovationNumber = 1;
             for (int i = 0; i < inputs + 1; i++) {
                 for (int j = 0; j < outputs; j++) {
-                    connections.Add(new Connection(i, inputs + j + 1, (float)Random.Shared.NextDouble() * 2 - 1, true, innovationNumber));
-                    innovationNumber++;
+                    connections.Add(new Connection(i, inputs + j + 1, (float)Random.Shared.NextDouble() * 2 - 1, true));
 
                 }
             }
@@ -46,7 +44,7 @@
             for (int i = 0; i < otherNodes.Count; i++) {
                 Node currentNode = otherNodes[i];
                 float sum = 0;
-                List<Connection> incomingConnections = this.connections.Where(c => c.outNodeId == currentNode.id && c.enabled).ToList();
+                List<Connection> incomingConnections = this.connections.Where(c => c.outNodeId == currentNode.id).ToList();
                 for (int j = 0; j < incomingConnections.Count; j++) {
                     Node sourceNode = this.nodes.First( n => n.id == incomingConnections[j].inNodeId);
                     sum += incomingConnections[j].weight * sourceNode.value;
@@ -74,15 +72,6 @@
             this.nodes = nodes;
         }
 
-
-        public NeuralNetwork clone() {
-
-            return new NeuralNetwork(
-                this.nodes.Select(n => n.clone()).ToList(),
-                this.connections.Select(c => c.clone()).ToList()
-                );
-
-        }
 
     }
 }

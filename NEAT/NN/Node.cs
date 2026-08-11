@@ -1,4 +1,6 @@
-﻿namespace NEAT.NN {
+﻿using System.Runtime.InteropServices.Swift;
+
+namespace NEAT.NN {
 
     public enum NodeType {
         Input,
@@ -19,6 +21,7 @@
             this.nodeType = nodeType;
             this.layer = layer;
             this.value = 0;
+            this.incomingConnections = new List<Connection>();
         }
 
 

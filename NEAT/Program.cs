@@ -1,6 +1,5 @@
-﻿using NEAT.NN;
+﻿using NEAT.Neat;
 using NEAT.SnakeGame;
-using Raylib_cs;
 using System.Numerics;
 
 namespace NEAT {
@@ -25,96 +24,15 @@ namespace NEAT {
     }
 
 
-    public enum RelativeDirection {
-        Straight,
-        Left,
-        Right,
-    }
-
 
     internal class Program {
         static void Main(string[] args) {
-            Food foodSource = new Food();
-            Snake snake = new Snake();
-            List<Vector2> body = snake.GetBody();
 
-            NeuralNetwork network = new NeuralNetwork(9, 3);
+            NeatManager neatManager = new NeatManager(9, 3, () => new Snake());
 
-            Raylib.InitWindow(Constants.WINDOWWIDTH, Constants.WINDOWHEIGHT, "Snek Game");
-            Raylib.SetTargetFPS(10);
-            bool isGameOver = false;
+            
 
-
-            while (!Raylib.WindowShouldClose()) {
-
-                if (isGameOver) {
-                    if (Raylib.IsKeyPressed(KeyboardKey.R)) {
-                        // Restart the game by resetting the objects and flag
-                        foodSource = new Food();
-                        snake = new Snake();
-                        body = snake.GetBody();
-                        isGameOver = false;
-                    }
-
-                } else {
-                    float[] networkInputs = snake.GetInputs();
-                    float[] outputs = network.feedForward(networkInputs);
-                    snake.Step(outputs);
-                    
-
-                    if (snake.isDead()) {
-                        isGameOver = true;
-                    }
-
-
-                    if (snake.CanEat()) {
-                        snake.Eat();
-                    }
-                }
-
-                Raylib.BeginDrawing();
-                Raylib.ClearBackground(Color.Black);
-
-                if (isGameOver) {
-                    Raylib.DrawText("GAME OVER", Constants.WINDOWWIDTH / 2 - 100, Constants.WINDOWHEIGHT / 2 - 40, 30, Color.Red);
-                    Raylib.DrawText($"Score: {snake.GetScore()}", Constants.WINDOWWIDTH / 2 - 50, Constants.WINDOWHEIGHT / 2 + 10, 20, Color.White);
-                    Raylib.DrawText("Press [R] to Restart", Constants.WINDOWWIDTH / 2 - 95, Constants.WINDOWHEIGHT / 2 + 50, 16, Color.DarkGray);
-
-                } else {
-                    Vector2 foodPosition = foodSource.getPosition();
-
-                    //drawing food
-                    Raylib.DrawRectangle(
-                        (int)foodPosition.X,
-                        (int)foodPosition.Y,
-                        Constants.SCALE,
-                        Constants.SCALE,
-                        Color.Red);
-
-
-                    //drawing snake
-                    Raylib.DrawRectangle(
-                            (int)body[body.Count() - 1].X,
-                            (int)body[body.Count() - 1].Y,
-                            Constants.SCALE - 1,
-                            Constants.SCALE - 1,
-                            Color.Yellow);
-
-                    for (int i = 0; i < body.Count() - 1; i++) {
-                        Raylib.DrawRectangle(
-                            (int)body[i].X,
-                            (int)body[i].Y,
-                            Constants.SCALE - 1,
-                            Constants.SCALE - 1,
-                            Color.Green);
-                    }
-                }
-                Raylib.EndDrawing();
-
-
-            }
-
-            Raylib.CloseWindow();
         }
     }
 }
+

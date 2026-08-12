@@ -28,7 +28,7 @@ namespace NEAT.NN {
                 .ToArray();
 
             Dictionary<int, Node> nodeLookup = this.nodes.ToDictionary(n => n.id);
-            this.nodes[0].value = 1;                                                    // Bias node
+            this.nodes[0].value = 1;                                                           // Bias node
 
             this.connections = genome.connectionGenes.Where(c => c.enabled)
                 .Select(
@@ -48,15 +48,15 @@ namespace NEAT.NN {
 
             this.outputNodes = this.nodes[^outputCount..];
 
-                                                                                        // Setting the incoming connections
-            for (int i = 0; i< this.connections.Length; i++) {
+            // Setting the incoming connections
+            for (int i = 0; i < this.connections.Length; i++) {
                 Connection c = this.connections[i];
                 c.outNode.incomingConnections.Add(c);
             }
         }
 
         public float[] feedForward(float[] inputValues) {
-            
+
             for (int i = 0; i < inputValues.Length; i++) {
                 this.inputNodes[i + 1].value = inputValues[i];
             }

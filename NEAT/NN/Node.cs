@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices.Swift;
-
-namespace NEAT.NN {
+﻿namespace NEAT.NN {
 
     public enum NodeType {
         Input,

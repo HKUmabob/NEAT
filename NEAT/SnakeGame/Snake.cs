@@ -3,6 +3,14 @@ using System.Net;
 using System.Numerics;
 
 namespace NEAT.SnakeGame {
+
+    public enum RelativeDirection {
+        Straight,
+        Left,
+        Right,
+    }
+
+
     public class Snake : INeatEnvironment{
         private int length;
         private List<Vector2> body;

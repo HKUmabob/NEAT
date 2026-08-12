@@ -1,21 +1,22 @@
 ﻿using NEAT.NN;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
 
 namespace NEAT.Neat {
     internal class NeatManager {
         public readonly int inputs;
         public readonly int outputs;
         private readonly int populationSize;
-        private List<Genome> population;
+        private Genome[] population;
+        private INeatEnvironment[] environments;
+        private readonly Func<INeatEnvironment> environmentFacotry;
 
-        public NeatManager(int populationSize, int inputs, int outputs) {
+        public NeatManager(int inputs, int outputs, Func<INeatEnvironment> environment, int populationSize = 100) {
             this.inputs = inputs;
             this.outputs = outputs;
             this.populationSize = populationSize;
-            this.population = new List<Genome>();
+            this.environmentFacotry = environment;
+            this.population = new Genome[this.populationSize];
+            this.environments = new INeatEnvironment[this.populationSize];
+
             this.Innitialize();
 
         }
@@ -34,15 +35,15 @@ namespace NEAT.Neat {
                 nodeGenes.Add(new NodeGene(inputs + 1 + i, NodeType.Output, 1));
             }
 
-            
+
             for (int i = 0; i < inputs + 1; i++) {
                 for (int j = 0; j < outputs; j++) {
 
                     connectionGenes.Add(new ConnectionGene(
-                        i, 
-                        inputs + j + 1, 
-                        (float)Random.Shared.NextDouble() * 2 - 1, 
-                        true, 
+                        i,
+                        inputs + j + 1,
+                        (float)Random.Shared.NextDouble() * 2 - 1,
+                        true,
                         InnovationTracker.Instance.GetInnovationNumber(i, j)
                         )
                     );
@@ -50,14 +51,16 @@ namespace NEAT.Neat {
                 }
             }
 
-            population.Add(new Genome(nodeGenes, connectionGenes, this.inputs, this.outputs));
+            this.population[0] = new Genome(nodeGenes, connectionGenes, this.inputs, this.outputs);
+            this.environments[0] = environmentFacotry();
             Genome firstGenome = population[0];
-            for (int i = 0; i < this.populationSize; i++) {
-                population.Add( firstGenome.Clone());
+            for (int i = 1; i < this.populationSize; i++) {
+                this.population[i] = firstGenome.Clone();
+                this.environments[i] = environmentFacotry();
+
             }
 
         }
-
 
     }
 }

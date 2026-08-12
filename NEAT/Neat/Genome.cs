@@ -1,7 +1,4 @@
 ﻿using NEAT.NN;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NEAT.Neat {
     internal class Genome {
@@ -14,7 +11,7 @@ namespace NEAT.Neat {
 
         public Genome(List<NodeGene> nodeGenes, List<ConnectionGene> connectionGenes, int inputs, int outputs) {
             this.inputs = inputs;
-            this.outputs = outputs; 
+            this.outputs = outputs;
             this.connectionGenes = connectionGenes;
             this.nodeGenes = nodeGenes;
             this.neuralNetwork = new NeuralNetwork(this, inputs, outputs);
@@ -24,7 +21,7 @@ namespace NEAT.Neat {
 
         public Genome Clone() {
             List<NodeGene> clonedNodeGenes = this.nodeGenes.Select(n => n.Clone()).ToList();
-            List<ConnectionGene> clonedConnectionGenes = this.connectionGenes.Select( c =>  c.Clone()).ToList();
+            List<ConnectionGene> clonedConnectionGenes = this.connectionGenes.Select(c => c.Clone()).ToList();
 
             return new Genome(clonedNodeGenes, clonedConnectionGenes, this.inputs, this.outputs);
         }

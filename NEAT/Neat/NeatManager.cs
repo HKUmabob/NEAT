@@ -5,6 +5,8 @@ namespace NEAT.Neat {
         public readonly int inputs;
         public readonly int outputs;
         private readonly int populationSize;
+        private int generation;
+        private Genome? champion;
         private Genome[] population;
         private INeatEnvironment[] environments;
         private readonly Func<INeatEnvironment> environmentFacotry;
@@ -14,6 +16,7 @@ namespace NEAT.Neat {
             this.outputs = outputs;
             this.populationSize = populationSize;
             this.environmentFacotry = environment;
+            this.generation = 1;
             this.population = new Genome[this.populationSize];
             this.environments = new INeatEnvironment[this.populationSize];
 
@@ -61,6 +64,37 @@ namespace NEAT.Neat {
             }
 
         }
+
+
+        public void EvaluatePopulation() {
+
+            Parallel.For(0, this.populationSize, i => {
+                NeuralNetwork network = this.population[i].neuralNetwork;
+                INeatEnvironment env = this.environments[i];
+
+                env.Reset();
+                bool isFinished = false;
+
+                while (!isFinished) {
+                    float[] inputs = env.GetInputs();
+                    float[] outputs = network.feedForward(inputs);
+                    isFinished = env.Step(outputs);
+
+                }
+                this.population[i].fitness = env.GetFitness();
+
+            });
+
+            for (int i = 0; i < this.populationSize; i++) {
+                this.population[i].Mutate();
+            }
+
+            this.champion = this.population.OrderBy(g => g.fitness).Last();
+            Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {this.champion.fitness}");
+            this.generation++;
+
+        }
+
 
     }
 }

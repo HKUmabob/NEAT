@@ -36,7 +36,7 @@ namespace NEAT.Neat {
 
         public void Mutate() {
             this.MutateWeights();
-            
+
             if (Random.Shared.NextDouble() < 0.03) {
                 this.AddNodeGene();
             }
@@ -72,7 +72,7 @@ namespace NEAT.Neat {
 
         private void AddNodeGene() {
             ConnectionGene[] enabledConnectionGenes = this.connectionGenes.Where(c => c.enabled).ToArray();
-            ConnectionGene oldConnectionGene = enabledConnectionGenes[Random.Shared.Next(enabledConnectionGenes.Length)]; 
+            ConnectionGene oldConnectionGene = enabledConnectionGenes[Random.Shared.Next(enabledConnectionGenes.Length)];
 
             int newId = InnovationTracker.Instance.GetNodeIdForSplit(oldConnectionGene.inNodeId, oldConnectionGene.outNodeId);
             if (this.nodeLookup.ContainsKey(newId)) {
@@ -87,7 +87,7 @@ namespace NEAT.Neat {
 
             oldConnectionGene.enabled = false;
 
-            ConnectionGene newConnectionGene1 =  new ConnectionGene(
+            ConnectionGene newConnectionGene1 = new ConnectionGene(
                 oldConnectionGene.inNodeId,
                 newNodeGene.id,
                 1.0f,
@@ -95,7 +95,7 @@ namespace NEAT.Neat {
                 InnovationTracker.Instance.GetInnovationNumber(oldConnectionGene.inNodeId, newNodeGene.id)
                 );
 
-            ConnectionGene newConnectionGene2 =  new ConnectionGene(
+            ConnectionGene newConnectionGene2 = new ConnectionGene(
                     newNodeGene.id,
                     oldConnectionGene.outNodeId,
                     oldConnectionGene.weight,
@@ -106,13 +106,13 @@ namespace NEAT.Neat {
             this.nodeGenes.Add(newNodeGene);
             this.nodeLookup.Add(newNodeGene.id, newNodeGene);
 
-            this.connectionGenes.Add(newConnectionGene1);  
+            this.connectionGenes.Add(newConnectionGene1);
             this.connectionGenes.Add(newConnectionGene2);
             this.connectionLookup.Add((newConnectionGene1.inNodeId, newConnectionGene1.outNodeId));
             this.connectionLookup.Add((newConnectionGene2.inNodeId, newConnectionGene2.outNodeId));
         }
 
-        
+
         private void ToggleConnectionGene() {
             ConnectionGene randomConnectionGene = this.connectionGenes[Random.Shared.Next(this.connectionGenes.Count)];
             randomConnectionGene.enabled = !randomConnectionGene.enabled;
@@ -121,7 +121,7 @@ namespace NEAT.Neat {
 
 
         private void AddConnectionGene() {
-            
+
             List<NodeGene> sourceNodes = new List<NodeGene>();
             List<NodeGene> targetNodes = new List<NodeGene>();
 
@@ -143,31 +143,57 @@ namespace NEAT.Neat {
 
             }
 
+            if (sourceNodes.Count == 0 || targetNodes.Count == 0) return;
 
             for (int i = 0; i < 20; i++) {
                 NodeGene sourceNode = sourceNodes[Random.Shared.Next(sourceNodes.Count)];
                 NodeGene targetNode = targetNodes[Random.Shared.Next(targetNodes.Count)];
 
-                if (IsValidConnection(sourceNode, targetNode)) {
-                    this.connectionGenes.Add(
-                        new ConnectionGene(
-                            sourceNode.id,
-                            targetNode.id,
-                            (float)Random.Shared.NextDouble() * 2 - 1,
-                            true,
-                            InnovationTracker.Instance.GetInnovationNumber(sourceNode.id, targetNode.id)
-                            )
-                        );
 
-                    this.connectionLookup.Add((sourceNode.id, targetNode.id));
-                    break;
+                if (this.IsValidConnection(sourceNode, targetNode)) {
+                    this.IntegrateConnectionGene(sourceNode.id, targetNode.id);
+                    return;
                 }
+            }
+
+            List<(int, int)> allAvailableConnections = new List<(int, int)>();
+            for (int i = 0; i< sourceNodes.Count; i++) {
+                for (int j = 0; j < targetNodes.Count; j++) {
+
+                    NodeGene sourceNode = sourceNodes[i];
+                    NodeGene targetNode = targetNodes[j];
+                    if (this.IsValidConnection(sourceNode, targetNode)) {
+                        allAvailableConnections.Add((sourceNode.id, targetNode.id));
+                    }
+                }
+            }
+
+            if (allAvailableConnections.Count > 0) {
+                (int sourceId, int targetId) chosenNode = allAvailableConnections[Random.Shared.Next(allAvailableConnections.Count)];
+                this.IntegrateConnectionGene(chosenNode.sourceId, chosenNode.targetId);
             }
         }
 
 
+        private void IntegrateConnectionGene(int inNodeId, int outNodeId) {
+            this.connectionGenes.Add(new ConnectionGene(
+                    inNodeId,
+                    outNodeId,
+                    (float)Random.Shared.NextDouble() * 2 - 1,
+                    true,
+                    InnovationTracker.Instance.GetInnovationNumber(inNodeId, outNodeId)
+                    )
+                );
+
+            this.connectionLookup.Add((inNodeId, outNodeId));
+        }
+
         private bool IsValidConnection(NodeGene inNodeGene, NodeGene outNodeGene) {
             if (inNodeGene.layer >= outNodeGene.layer) {
+                return false;
+            }
+
+            if (inNodeGene.layer == outNodeGene.layer) {
                 return false;
             }
 
@@ -193,10 +219,7 @@ namespace NEAT.Neat {
 
             }
 
-            bool isFitnessEqual = false;
-            if (fitParent.fitness == unfitParent.fitness) {
-                isFitnessEqual = true;
-            }
+            bool isFitnessEqual = fitParent.fitness == unfitParent.fitness;
 
 
             Dictionary<int, ConnectionGene> fitParentInnovations = fitParent.connectionGenes.ToDictionary(c => c.innovationNumber);

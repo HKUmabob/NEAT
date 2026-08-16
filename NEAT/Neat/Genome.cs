@@ -20,12 +20,7 @@ namespace NEAT.Neat {
             this.connectionGenes = connectionGenes;
             this.nodeGenes = nodeGenes;
             this.nodeLookup = this.nodeGenes.ToDictionary(n => n.id);
-            this.connectionLookup = new HashSet<(int, int)>();
-            for (int i = 0; i < this.connectionGenes.Count; i++) {
-                this.connectionLookup.Add((this.connectionGenes[i].inNodeId, this.connectionGenes[i].outNodeId));
-            }
-
-
+            this.connectionLookup = this.connectionGenes.Select(c => (c.inNodeId, c.outNodeId)).ToHashSet();
             this.neuralNetwork = new NeuralNetwork(this, inputs, outputs);
 
         }
@@ -77,9 +72,15 @@ namespace NEAT.Neat {
 
         private void AddNodeGene() {
             ConnectionGene[] enabledConnectionGenes = this.connectionGenes.Where(c => c.enabled).ToArray();
-            ConnectionGene oldConnectionGene = enabledConnectionGenes[Random.Shared.Next(enabledConnectionGenes.Length)];
+            ConnectionGene oldConnectionGene = enabledConnectionGenes[Random.Shared.Next(enabledConnectionGenes.Length)]; 
+
+            int newId = InnovationTracker.Instance.GetNodeIdForSplit(oldConnectionGene.inNodeId, oldConnectionGene.outNodeId);
+            if (this.nodeLookup.ContainsKey(newId)) {
+                return;
+            }
+
             NodeGene newNodeGene = new NodeGene(
-                this.nodeLookup.Keys.Max() + 1,
+                newId,
                 NodeType.Hidden,
                 (nodeLookup[oldConnectionGene.inNodeId].layer + nodeLookup[oldConnectionGene.outNodeId].layer) / 2.0f
                 );
@@ -177,5 +178,80 @@ namespace NEAT.Neat {
             return true;
         }
 
+
+        public static Genome Crossover(Genome parent1, Genome parent2) {
+            List<ConnectionGene> childConnectioGenes = new List<ConnectionGene>();
+            Genome fitParent;
+            Genome unfitParent;
+            if (parent1.fitness >= parent2.fitness) {
+                fitParent = parent1;
+                unfitParent = parent2;
+
+            } else {
+                fitParent = parent2;
+                unfitParent = parent1;
+
+            }
+
+            bool isFitnessEqual = false;
+            if (fitParent.fitness == unfitParent.fitness) {
+                isFitnessEqual = true;
+            }
+
+
+            Dictionary<int, ConnectionGene> fitParentInnovations = fitParent.connectionGenes.ToDictionary(c => c.innovationNumber);
+            Dictionary<int, ConnectionGene> unfitParentInnovations = unfitParent.connectionGenes.ToDictionary(c => c.innovationNumber);
+
+            foreach (var (inum, fitGene) in fitParentInnovations) {
+                if (unfitParentInnovations.TryGetValue(inum, out ConnectionGene unfitGene)) {
+
+                    ConnectionGene chosenGene = (Random.Shared.NextDouble() >= 0.5) ? fitGene : unfitGene;
+                    ConnectionGene childGene = chosenGene.Clone();
+                    if (!fitGene.enabled || !unfitGene.enabled) {
+                        if (Random.Shared.NextDouble() < 0.75) {
+                            childGene.enabled = false;
+                        } else {
+                            childGene.enabled = true;
+                        }
+                    }
+
+
+                    childConnectioGenes.Add(childGene);
+                    continue;
+                }
+
+                childConnectioGenes.Add(fitGene.Clone());
+            }
+
+            if (isFitnessEqual) {
+                foreach (var (inum, unfitGene) in unfitParentInnovations) {
+                    if (!fitParentInnovations.ContainsKey(inum)) {
+                        childConnectioGenes.Add(unfitGene.Clone());
+                    }
+                }
+            }
+
+            List<NodeGene> childNodeGenes = fitParent.nodeGenes.Select(n => n.Clone()).ToList();
+            HashSet<int> childNodeLookup = childNodeGenes.Select(n => n.id).ToHashSet();
+
+            for (int i = 0; i < childConnectioGenes.Count; i++) {
+                ConnectionGene conn = childConnectioGenes[i];
+
+                if (!childNodeLookup.Contains(conn.inNodeId)) {
+                    childNodeGenes.Add(unfitParent.nodeLookup[conn.inNodeId].Clone());
+                    childNodeLookup.Add(conn.inNodeId);
+                }
+
+                if (!childNodeLookup.Contains(conn.outNodeId)) {
+                    childNodeGenes.Add(unfitParent.nodeLookup[conn.outNodeId].Clone());
+                    childNodeLookup.Add(conn.outNodeId);
+                }
+            }
+
+
+            return new Genome(childNodeGenes, childConnectioGenes, fitParent.inputs, fitParent.outputs);
+        }
     }
 }
+
+

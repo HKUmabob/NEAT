@@ -19,6 +19,7 @@ namespace NEAT.Neat {
             this.generation = 1;
             this.population = new Genome[this.populationSize];
             this.environments = new INeatEnvironment[this.populationSize];
+            InnovationTracker.Instance.SetLastNodeId(inputs + outputs + 1);
 
             this.Innitialize();
 

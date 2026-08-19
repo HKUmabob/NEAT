@@ -7,6 +7,7 @@ namespace NEAT.Neat {
         public List<ConnectionGene> connectionGenes { get; private set; }
         private readonly int inputs;
         private readonly int outputs;
+        public float adjustedFitness;
         public float fitness;
         public readonly NeuralNetwork neuralNetwork;
 
@@ -19,6 +20,7 @@ namespace NEAT.Neat {
             this.outputs = outputs;
             this.connectionGenes = connectionGenes;
             this.nodeGenes = nodeGenes;
+            this.adjustedFitness = 0;
             this.nodeLookup = this.nodeGenes.ToDictionary(n => n.id);
             this.connectionLookup = this.connectionGenes.Select(c => (c.inNodeId, c.outNodeId)).ToHashSet();
             this.neuralNetwork = new NeuralNetwork(this, inputs, outputs);

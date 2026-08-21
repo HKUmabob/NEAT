@@ -1,33 +1,93 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace NEAT.Neat {
+﻿namespace NEAT.Neat {
     internal class Species {
         public int age;
         public int generationsSinceImprovement;
         public float averageFitness;
+        public float bestFitness;
         public List<Genome> population;
         public Genome representative;
+        public Genome champion;
+
 
 
         public Species(Genome representative) {
-            this.representative = representative;
+            this.representative = representative.Clone();
+            this.champion = representative.Clone();
             this.age = 0;
             this.generationsSinceImprovement = 0;
             this.averageFitness = 0;
-            this.population = new List<Genome>() { this.representative };
+            this.bestFitness = 0;
+            this.population = new List<Genome>() { representative };
         }
 
 
-        public void CalculateAvergaeFiness() {
-            float sum = 0;
-            for (int i = 0; i < population.Count; i++) {
-                sum += this.population[i].adjustedFitness;
+        public void UpdateFitnessAndStagnation() {
+            if (this.population.Count == 0) return;
+
+            float sum = 0.0f;
+            float maxfitness = -99999999999999999999.0f;
+            Genome currentTopPerformer = this.population[0];
+            for (int i = 0; i < this.population.Count; i++) {
+                Genome genome = this.population[i];
+                genome.adjustedFitness = genome.fitness / this.population.Count;
+                sum += genome.adjustedFitness;
+
+                if (genome.fitness > maxfitness) {
+                    maxfitness = genome.fitness;
+                    currentTopPerformer = genome;
+                }
             }
-            this.averageFitness = sum / this.population.Count;
-        }
 
+            if (maxfitness > this.bestFitness) {
+                this.bestFitness = maxfitness;
+                this.champion = currentTopPerformer;
+                this.generationsSinceImprovement = 0;
+
+            } else {
+                this.generationsSinceImprovement++;
+            }
+
+            this.representative = this.population[Random.Shared.Next(this.population.Count)].Clone();
+            this.age++;
+
+            this.averageFitness = sum;
+        }
+        
+
+        public List<Genome> GetOffsprings(int offSpringCount) {
+            List<Genome> offsprings = new List<Genome>();
+            if (offSpringCount == 0) {
+                return offsprings;
+            }
+
+            this.population.Sort();
+            int cutoffIndex = (int)Math.Ceiling(this.population.Count * 0.2);
+            int startIndex = 0;
+
+            if (this.population.Count >5) {
+                startIndex = 1;
+                offsprings.Add(this.population[0].Clone());
+            }
+
+            for (int i = startIndex; i < offSpringCount; i++) {
+                Genome child;
+                if (Random.Shared.NextDouble() < 0.75) {
+                    child = Genome.Crossover(
+                        this.population[Random.Shared.Next(cutoffIndex)],
+                        this.population[Random.Shared.Next(cutoffIndex)]
+                        );
+                
+                } else {
+                    child = this.population[Random.Shared.Next(cutoffIndex)].Clone();
+                }
+
+                child.Mutate();
+                offsprings.Add(child);
+            }
+
+            return offsprings;
+        }
+        
 
         public float GetCompatibilityDistance(Genome candidate, float c1 = 1.0f, float c2 = 1.0f, float c3 = 0.4f) {
             ConnectionGene[] repGenes = this.representative.connectionGenes.OrderBy(c => c.innovationNumber).ToArray();

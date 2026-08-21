@@ -2,7 +2,7 @@
 // TODO write the fallback scan for addConnection
 
 namespace NEAT.Neat {
-    internal class Genome {
+    internal class Genome: IComparable<Genome> {
         public List<NodeGene> nodeGenes { get; private set; }
         public List<ConnectionGene> connectionGenes { get; private set; }
         private readonly int inputs;
@@ -276,7 +276,10 @@ namespace NEAT.Neat {
 
             return new Genome(childNodeGenes, childConnectioGenes, fitParent.inputs, fitParent.outputs);
         }
+
+        public int CompareTo(Genome? otherGenome) {
+            if (otherGenome == null) return 1;
+            return otherGenome.fitness.CompareTo(this.fitness);
+        }
     }
 }
-
-

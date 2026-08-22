@@ -28,7 +28,7 @@ namespace NEAT {
     internal class Program {
         static void Main(string[] args) {
             // Testing only
-            NeatManager neatManager = new NeatManager(9, 3, () => new Snake(), 500);
+            NeatManager neatManager = new NeatManager(9, 3, () => new Snake(), 100);
             neatManager.Train(5000, 2000);
             Console.WriteLine();
 

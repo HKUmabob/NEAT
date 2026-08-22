@@ -1,25 +1,30 @@
 ﻿using NEAT.NN;
+using System.Diagnostics;
 
 namespace NEAT.Neat {
     internal class NeatManager {
         public readonly int inputs;
         public readonly int outputs;
         private readonly int populationSize;
-        private readonly float compatibilityThreshold;
+        private readonly int targetSpeciesCount;
+        private float compatibilityThreshold;
         private int generation;
+        private float bestFitness;
         private Genome? champion;
         private List<Genome> population;
         private List<Species> speciesList;
         private INeatEnvironment[] environments;
         private readonly Func<INeatEnvironment> environmentFacotry;
 
-        public NeatManager(int inputs, int outputs, Func<INeatEnvironment> environment, int populationSize = 100, float compatibilityThreshold = 0.3f) {
+        public NeatManager(int inputs, int outputs, Func<INeatEnvironment> environment, int populationSize = 100, float compatibilityThreshold = 0.3f, int targetSpeciesCount = 12) {
             this.inputs = inputs;
             this.outputs = outputs;
             this.populationSize = populationSize;
             this.compatibilityThreshold = compatibilityThreshold;
             this.environmentFacotry = environment;
+            this.targetSpeciesCount = targetSpeciesCount;
             this.generation = 1;
+            this.bestFitness = 0.0f;
             this.population = new List<Genome>(this.populationSize);
             this.environments = new INeatEnvironment[this.populationSize];
             this.speciesList = new List<Species>();
@@ -50,7 +55,7 @@ namespace NEAT.Neat {
                     connectionGenes.Add(new ConnectionGene(
                         i,
                         j,
-                        (float)Random.Shared.NextDouble() * 2 - 1,
+                        (float)Random.Shared.NextDouble() * 16 - 8,
                         true,
                         InnovationTracker.Instance.GetInnovationNumber(i, j)
                         )
@@ -76,6 +81,8 @@ namespace NEAT.Neat {
                 this.speciesList[i].population.Clear();
             }
 
+            // To make sure we stay around target species count
+            this.AdjustCompatibilityThresholdl();
 
             // Assigning genomes to species
             for (int i = 0; i < this.populationSize; i++) {
@@ -110,7 +117,7 @@ namespace NEAT.Neat {
             }
 
 
-            // Producing offsprings
+            // Caluclating offspring counts
             this.population.Clear();
             float[] exactquotas = new float[this.speciesList.Count];
             int allocated = 0;
@@ -124,6 +131,7 @@ namespace NEAT.Neat {
                 allocated += floorQuota;
             }
 
+            // Filling up the missing population
             int leftovers = this.populationSize - allocated;
             if (leftovers > 0) {
                 var sortedIndices = Enumerable.Range(0, this.speciesList.Count)
@@ -135,6 +143,7 @@ namespace NEAT.Neat {
                 }
             }
 
+            // Generating offsprings
             for (int i = 0; i < this.speciesList.Count; i++) {
                 this.population.AddRange(this.speciesList[i].GetOffsprings(offspringCounts[i]));
             }
@@ -161,13 +170,35 @@ namespace NEAT.Neat {
             });
             
             this.population.Sort();
-            this.champion = this.population[0];
+            Genome generationChampion = this.population[0];
 
+            if (generationChampion.fitness > this.bestFitness) {
+                this.champion = generationChampion.Clone();
+                this.bestFitness = generationChampion.fitness;
+            }
+
+            Console.WriteLine(generationChampion.fitness);
             if (this.generation % 100 == 0) {
-                Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {this.champion.fitness}");
+                //Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {generationChampion.fitness} \nHistoricalBest: {this.bestFitness}\n");
             }
 
         }
+
+        
+        private void AdjustCompatibilityThresholdl() {
+            float delta = 0.1f;
+            if (this.speciesList.Count > this.targetSpeciesCount) {
+                this.compatibilityThreshold += delta;
+
+            } else if (this.speciesList.Count < this.targetSpeciesCount) {
+                this.compatibilityThreshold -= delta;
+            }
+
+            if (this.compatibilityThreshold < 0.3f) {
+                this.compatibilityThreshold = 0.3f;
+            }
+        }
+
 
         public void Train(int maxGenerations, float fitnessThreshold) {
             for (int i = 0; i < maxGenerations; i++) {

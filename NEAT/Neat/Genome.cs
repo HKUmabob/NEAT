@@ -61,12 +61,12 @@ namespace NEAT.Neat {
                 }
 
                 if (Random.Shared.NextDouble() > 0.9) {
-                    this.connectionGenes[i].weight = (float)Random.Shared.NextDouble() * 2 - 1;
+                    this.connectionGenes[i].weight = (float)Random.Shared.NextDouble() * 16 - 8;
                     continue;
                 }
 
-                this.connectionGenes[i].weight += (float)((Random.Shared.NextDouble() * 2 - 1) * 0.1);
-
+                this.connectionGenes[i].weight += (float)(Random.Shared.NextDouble() * 1 - 0.5);
+                this.connectionGenes[i].weight = Math.Clamp(this.connectionGenes[i].weight, -8.0f, 8.0f);
             }
 
         }
@@ -228,7 +228,7 @@ namespace NEAT.Neat {
             Dictionary<int, ConnectionGene> unfitParentInnovations = unfitParent.connectionGenes.ToDictionary(c => c.innovationNumber);
 
             foreach (var (inum, fitGene) in fitParentInnovations) {
-                if (unfitParentInnovations.TryGetValue(inum, out ConnectionGene unfitGene)) {
+                if (unfitParentInnovations.TryGetValue(inum, out ConnectionGene? unfitGene)) {
 
                     ConnectionGene chosenGene = (Random.Shared.NextDouble() >= 0.5) ? fitGene : unfitGene;
                     ConnectionGene childGene = chosenGene.Clone();

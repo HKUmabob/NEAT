@@ -11,7 +11,10 @@ namespace NEAT.SnakeGame {
 
         public Food() {
 
-            this.changePosition();
+            this.position = new Vector2(
+                    rand.Next(15, Constants.NUMCOLS) * Constants.SCALE,
+                    rand.Next(15, Constants.NUMROWS) * Constants.SCALE
+                    );
         }
 
         public Vector2 getPosition() {
@@ -19,16 +22,6 @@ namespace NEAT.SnakeGame {
         }
 
         public void changePosition(List<Vector2>? snake = null) {
-
-            if (snake is null) {
-
-                this.position = new Vector2(
-                    rand.Next(5, Constants.NUMCOLS) * Constants.SCALE,
-                    rand.Next(5, Constants.NUMROWS) * Constants.SCALE
-                    );
-
-                return;
-            }
 
             List<Vector2> freeSpace = new List<Vector2>();
             HashSet<Vector2> snakeSet = new HashSet<Vector2>(snake);

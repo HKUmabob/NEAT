@@ -6,7 +6,7 @@ namespace NEAT.Neat {
     public interface INeatEnvironment {
 
         // Reset the simulation to its innitial state
-        void Reset();
+        void Reset(int seed);
 
         // Takes the next step in the 
         // Returns true if the simulation has ended

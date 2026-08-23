@@ -147,26 +147,37 @@ namespace NEAT.Neat {
             for (int i = 0; i < this.speciesList.Count; i++) {
                 this.population.AddRange(this.speciesList[i].GetOffsprings(offspringCounts[i]));
             }
+
+            if (this.champion != null) {
+                this.population[1] = this.champion.Clone();
+            }
         }
 
 
         public void EvaluatePopulation() {
+            int repeats = 3;
+            int[] seedArray = new int[repeats];
+            for (int i = 0; i < repeats; i++) {
+                seedArray[i] = Random.Shared.Next();
+            }
 
             Parallel.For(0, this.populationSize, i => {
+
                 NeuralNetwork network = this.population[i].neuralNetwork;
                 INeatEnvironment env = this.environments[i];
 
-                env.Reset();
-                bool isFinished = false;
+                for (int j = 0; j < repeats; j++) {
+                    env.Reset(seedArray[j]);
+                    bool isFinished = false;
 
-                while (!isFinished) {
-                    float[] inputs = env.GetInputs();
-                    float[] outputs = network.feedForward(inputs);
-                    isFinished = env.Step(outputs);
-
+                    while (!isFinished) {
+                        float[] inputs = env.GetInputs();
+                        float[] outputs = network.feedForward(inputs);
+                        isFinished = env.Step(outputs);
+                    }
+                    this.population[i].fitness += env.GetFitness();
                 }
-                this.population[i].fitness = env.GetFitness();
-
+                this.population[i].fitness /= repeats;
             });
             
             this.population.Sort();
@@ -177,16 +188,16 @@ namespace NEAT.Neat {
                 this.bestFitness = generationChampion.fitness;
             }
 
-            Console.WriteLine(generationChampion.fitness);
+            //Console.WriteLine(generationChampion.fitness);
             if (this.generation % 100 == 0) {
-                //Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {generationChampion.fitness} \nHistoricalBest: {this.bestFitness}\n");
+                Console.WriteLine($"Generation: {this.generation} \nGenerational Best: {generationChampion.fitness} \nHistorical Best: {this.bestFitness}\n");
             }
 
         }
 
         
         private void AdjustCompatibilityThresholdl() {
-            float delta = 0.1f;
+            float delta = 0.05f;
             if (this.speciesList.Count > this.targetSpeciesCount) {
                 this.compatibilityThreshold += delta;
 
@@ -205,17 +216,18 @@ namespace NEAT.Neat {
                 this.EvaluatePopulation();
                 this.AdvanceGeneration();
                 this.generation++;
+                //Thread.Sleep(500);
                 if (this.champion?.fitness >= fitnessThreshold) {
                     break;
                 }
             }
             
-            Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {this.champion?.fitness}");
+            Console.WriteLine($"Genration: {this.generation} \nChampion fitness: {this.bestFitness}");
         }
 
 
-        //public NeuralNetwork GetChampionNetwork() {
-            //return this.champion.neuralNetwork.Clone();
-        //}
+       public NeuralNetwork GetChampionNetwork() {
+            return this.champion.neuralNetwork;
+        }
     }
 }

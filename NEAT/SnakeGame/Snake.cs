@@ -19,26 +19,42 @@ namespace NEAT.SnakeGame {
         private int xDir;
         private int yDir;
         private int speed;
-        private Food foodSourse;
+        private IFoodSource foodSourse;
         private float fitness;
         private int stepsSinceEaten;
         private float lastDistanceToFood;
+        private bool isTraining;
 
 
-        public Snake() {
+        public Snake(bool isTraining = true) {
             this.length = 1;
             this.body = new List<Vector2>();
             this.body.Add(new Vector2(Constants.WINDOWWIDTH / 2, Constants.WINDOWHEIGHT / 2));
-            this.foodSourse = new Food();
+            this.foodSourse = this.GetFoodSource(123); //this will be used when the snake is run outside of neatmanager
             this.speed = Constants.SCALE;
             this.xDir = 0;
             this.yDir = -this.speed;
             this.fitness = 0;
             this.stepsSinceEaten = 0;
-            this.lastDistanceToFood = 1;
+            this.isTraining = isTraining;
+            this.headX = (int)this.body[0].X;
+            this.headY = (int)this.body[0].Y;
+            float xDelta = Math.Abs((this.foodSourse.getPosition().X - this.headX) / 25f);
+            float yDelta = Math.Abs((this.foodSourse.getPosition().Y - this.headY) / 25f);
+            this.lastDistanceToFood = xDelta  + yDelta;
         }
 
+        public Vector2 GetFoodPosiotion() {
+            return this.foodSourse.getPosition();
+        }
 
+        private IFoodSource GetFoodSource(int seed) {
+            if (this.isTraining) {
+                return new TrainingFood(seed);
+            }
+
+            return new PostTrainingFood();
+        }
 
         public bool CanEat() {
             if (this.foodSourse.getPosition().Equals(this.body[this.length - 1])) {
@@ -61,6 +77,9 @@ namespace NEAT.SnakeGame {
 
             this.length++;
             this.foodSourse.changePosition(this.body);
+            float xDelta = Math.Abs((this.foodSourse.getPosition().X - this.headX) / 25f);
+            float yDelta = Math.Abs((this.foodSourse.getPosition().Y - this.headY) / 25f);
+            this.lastDistanceToFood = xDelta + yDelta;
         }
 
 
@@ -70,6 +89,7 @@ namespace NEAT.SnakeGame {
 
 
         public bool isDead() {
+            int maxSteps = 100 + this.length * 5;
             if (
                 this.headX >= Constants.WINDOWWIDTH ||
                 this.headY >= Constants.WINDOWHEIGHT ||
@@ -78,12 +98,12 @@ namespace NEAT.SnakeGame {
                 this.fitness -= 60;
                 return true;
 
-            } else if (this.stepsSinceEaten > 100) {
-                this.fitness -= 80;
+            } else if (this.stepsSinceEaten > maxSteps) {
+                this.fitness -= 70;
                 return true;
 
             }else if (this.body[..^1].Contains(this.body[this.length - 1])) {
-                this.fitness -= 30;
+                this.fitness -= 50;
                 return true;
             }
 
@@ -120,14 +140,13 @@ namespace NEAT.SnakeGame {
 
 
         private void CloserToFoodReward(float xDelta, float yDelta) {
-            float squaredDistance = xDelta * xDelta + yDelta * yDelta;
-            if (this.lastDistanceToFood > squaredDistance) {
-                this.fitness += (this.lastDistanceToFood - squaredDistance) * 0.01f;
-            } else if (this.lastDistanceToFood < squaredDistance) {
-                this.fitness -= 5;
-            }
+            float currentFoodDistance = xDelta + yDelta;
+            float stepDelta = 0.0f;
+            float scale = 1.5f;
+            stepDelta = this.lastDistanceToFood - currentFoodDistance;
 
-            this.lastDistanceToFood = squaredDistance;
+            this.fitness += stepDelta * scale;
+            this.lastDistanceToFood = currentFoodDistance;
         }
 
 
@@ -170,29 +189,69 @@ namespace NEAT.SnakeGame {
         }
 
 
-        public float[] GetInputs() {
-            float hDistanceToFood = (this.foodSourse.getPosition().X - this.headX) / 25f;
-            float vDistanceToFood = (this.foodSourse.getPosition().Y - this.headY) / 25f;
-            this.CloserToFoodReward(hDistanceToFood, vDistanceToFood);
 
-            float rightWallDistance = Constants.NUMCOLS - 1.0f - this.headX / 25f;
-            float leftWallDistance = this.headX / 25f;
-            float downWallDistance = Constants.NUMROWS - 1.0f - this.headY / 25f;
-            float upWallDistance = this.headY / 25f;
+        private float GetDistanceToWall(RelativeDirection direction) {
+            int dx = 0;
+            int dy = 0;
+            if (direction == RelativeDirection.Straight) {
+                dx = this.xDir / Constants.SCALE;
+                dy = this.yDir / Constants.SCALE;
+            } else if (direction == RelativeDirection.Left) {
+                dx = this.yDir / Constants.SCALE;
+                dy = -this.xDir / Constants.SCALE;
+            } else if ( direction == RelativeDirection.Right) {
+                dx = -this.yDir / Constants.SCALE;
+                dy = this.xDir / Constants.SCALE;
+            }
+
+            int currentX = (this.headX / Constants.SCALE) + dx;
+            int currentY = (this.headY / Constants.SCALE) + dy;
+            int distance = 1;
+
+            while (
+                currentX >= 0 && currentX < Constants.NUMCOLS &&
+                currentY >= 0 && currentY < Constants.NUMROWS
+                ) {
+
+                currentX += dx;
+                currentY += dy;
+                distance++;
+            }
+
+            return 1.0f / distance;
+        }
+
+
+        public float[] GetInputs() {
+            float hDistanceToFood = (this.foodSourse.getPosition().X - this.headX) / (float)Constants.SCALE;
+            float vDistanceToFood = (this.foodSourse.getPosition().Y - this.headY) / (float)Constants.SCALE;
+
+            float snakeForwardX = this.xDir / Constants.SCALE;
+            float snakeForwardY = this.yDir / Constants.SCALE;
+            float snakeRightX = -snakeForwardY;
+            float snakeRightY = snakeForwardX;
+
+            float relForwardFood = hDistanceToFood * snakeForwardX + vDistanceToFood * snakeForwardY;
+            float relRightFood = hDistanceToFood * snakeRightX + vDistanceToFood * snakeRightY;
+
+            float forwardWallDistance = this.GetDistanceToWall(RelativeDirection.Straight);
+            float rightWallDistance = this.GetDistanceToWall(RelativeDirection.Right);
+            float leftWallDistance = this.GetDistanceToWall(RelativeDirection.Left);
 
             float forwardBodyDistance = GetDistanceToBody(RelativeDirection.Straight);
             float leftBodyDistance = GetDistanceToBody(RelativeDirection.Left);
             float rightBodyDistance = GetDistanceToBody(RelativeDirection.Right);
 
 
-
+            float maxDimension = Math.Max(Constants.NUMCOLS, Constants.NUMROWS);
             return new float[] {
-                hDistanceToFood / Constants.NUMCOLS,
-                vDistanceToFood / Constants.NUMROWS,
-                1.0f / (rightWallDistance + 1.0f), // +1 to avoid deviding by 0
-                1.0f / (leftWallDistance + 1.0f),
-                1.0f / (upWallDistance + 1.0f),
-                1.0f / (downWallDistance + 1.0f),
+                relForwardFood / maxDimension,
+                relRightFood / maxDimension,
+
+                forwardWallDistance,
+                leftWallDistance,
+                rightWallDistance,
+
                 forwardBodyDistance,
                 leftBodyDistance,
                 rightBodyDistance
@@ -201,17 +260,21 @@ namespace NEAT.SnakeGame {
         }
 
 
-        public void Reset() {
+        public void Reset(int seed) {
             this.length = 1;
             this.body = new List<Vector2>();
             this.body.Add(new Vector2(Constants.WINDOWWIDTH / 2, Constants.WINDOWHEIGHT / 2));
-            this.foodSourse = new Food();
+            this.foodSourse = this.GetFoodSource(seed);
             this.speed = Constants.SCALE;
             this.xDir = 0;
             this.yDir = -this.speed;
             this.fitness = 0;
             this.stepsSinceEaten = 0;
-            this.lastDistanceToFood = 1;
+            this.headX = (int)this.body[0].X;
+            this.headY = (int)this.body[0].Y;
+            float xDelta = Math.Abs((this.foodSourse.getPosition().X - this.headX) / 25f);
+            float yDelta = Math.Abs((this.foodSourse.getPosition().Y - this.headY) / 25f);
+            this.lastDistanceToFood = xDelta + yDelta ;
 
         }
 
@@ -231,8 +294,16 @@ namespace NEAT.SnakeGame {
             this.body.RemoveAt(0);
             this.body.Add(new Vector2(this.headX, this.headY));
 
+            float hDistanceToFood = Math.Abs((this.foodSourse.getPosition().X - this.headX) / 25f);
+            float vDistanceToFood = Math.Abs((this.foodSourse.getPosition().Y - this.headY) / 25f);
+            this.CloserToFoodReward(hDistanceToFood, vDistanceToFood);
+
             if (this.CanEat()) {
+                this.fitness += 100;
                 this.Eat();
+                this.fitness++;
+                return false;
+
             }
 
             return this.isDead();
@@ -240,10 +311,10 @@ namespace NEAT.SnakeGame {
 
 
         public float GetFitness() {
-            this.fitness += this.GetScore() * 200;
-
-            return MathF.Max(this.fitness, 0.1f);
+            return this.fitness;
         }
+
+        
 
     }
 }
